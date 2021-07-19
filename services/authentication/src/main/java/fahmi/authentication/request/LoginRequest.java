@@ -9,7 +9,7 @@ import javax.validation.constraints.NotNull;
 public class LoginRequest {
     @Email(message = "Not a valid email address")
     @NotNull(message = "Email cannot be null")
-    private String email;
+    private String username;
 
     @NotNull(message = "password cannot be null")
     private String password;

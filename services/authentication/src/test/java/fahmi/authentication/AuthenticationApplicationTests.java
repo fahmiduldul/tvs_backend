@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -25,7 +26,7 @@ class AuthenticationApplicationTests {
     private UserRepository userRepository;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     @Test
     void contextLoads() {
@@ -44,10 +45,10 @@ class AuthenticationApplicationTests {
 
     @Test
     void test(){
-        Flux<Integer> pub = Flux.range(0,6).log()
-                .doOnNext(a -> log.info("{}", a));
+        Flux<Integer> pub = Flux.range(0,6).log();
+                //.doOnNext(a -> log.info("{}", a));
 
-        pub.subscribe();
+        pub.subscribe(i -> log.info("{}", i));
     }
 
 }

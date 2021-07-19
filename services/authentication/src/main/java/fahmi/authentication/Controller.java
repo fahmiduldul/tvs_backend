@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
@@ -50,13 +51,38 @@ public class Controller {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(userDTOMono);
+                .body(null);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Mono<String>> login(){
+    public Mono<ResponseEntity<String>> login(ServerWebExchange exchange){
+        log.info("exchage run");
 
-        return ResponseEntity.status(200).body(Mono.just("logged in!"));
+        return exchange.getFormData()
+                .map(x-> {
+                    log.info("{}", x);
+                    String username = x.get("username").get(0);
+                    return this.jwtTool.encode(username);
+                })
+                .map(token -> {
+                    HttpCookie cookie = ResponseCookie.from("jwt",token).build();
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                            .body("logged in");
+                });
+
+        // THIS SHIT WAS TO VALUABLE TO BE DELETED
+        // how to change DataBuffer to String
+        //exchange.getRequest().getBody()
+        //        .map(dataBuffer -> {
+        //            byte[] bytes = new byte[dataBuffer.readableByteCount()];
+        //            dataBuffer.read(bytes);
+        //            DataBufferUtils.release(dataBuffer);
+        //            return new String(bytes, StandardCharsets.UTF_8);
+        //        })
+        //        .collectList()
+        //        .log()
+        //        .subscribe();
     }
 
     @GetMapping(path = "/user/{email}")
