@@ -1,6 +1,7 @@
 package fahmi.authentication;
 
 import fahmi.authentication.request.CreateUserRequest;
+import fahmi.authentication.security.JwtTool;
 import fahmi.authentication.service.UserServiceImpl;
 import fahmi.authentication.shared.UserDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +9,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -20,13 +20,13 @@ import javax.validation.Valid;
 public class Controller {
     private UserServiceImpl userService;
     private ModelMapper mapper;
-    private PasswordEncoder passwordEncoder;
+    private JwtTool jwtTool;
 
     @Autowired
-    public Controller(UserServiceImpl userService, ModelMapper mapper, PasswordEncoder passwordEncoder) {
+    public Controller(UserServiceImpl userService, ModelMapper mapper, JwtTool jwtTool) {
         this.mapper = mapper;
         this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
+        this.jwtTool = jwtTool;
     }
 
     @GetMapping("/status")
@@ -44,11 +44,12 @@ public class Controller {
         UserDTO userDTO = this.mapper.map(createUserRequest, UserDTO.class);
         Mono<UserDTO> userDTOMono = this.userService.createUser(userDTO);
 
-//        HttpCookie cookie = ResponseCookie.from("tvs","cookie").build();
+        String token = this.jwtTool.encode(userDTO.getEmail());
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-//                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+        HttpCookie cookie = ResponseCookie.from("jwt",token).build();
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(userDTOMono);
     }
 

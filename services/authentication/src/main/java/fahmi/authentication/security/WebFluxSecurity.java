@@ -23,7 +23,9 @@ public class WebFluxSecurity {
                 .pathMatchers("/**").permitAll()
 
                 .and().formLogin()
+                // to reject the authentication
                 .authenticationFailureHandler((exchange, exception) -> Mono.error(exception))
+                // if success, pass to controller POST /login
                 .authenticationSuccessHandler(new WebFilterChainServerAuthenticationSuccessHandler())
 
                 .and().httpBasic();
