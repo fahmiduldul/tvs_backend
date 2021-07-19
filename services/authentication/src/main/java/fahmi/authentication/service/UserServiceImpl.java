@@ -2,6 +2,7 @@ package fahmi.authentication.service;
 
 import fahmi.authentication.data.UserEntity;
 import fahmi.authentication.data.UserRepository;
+import fahmi.authentication.security.JwtTool;
 import fahmi.authentication.shared.UserDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -20,12 +21,16 @@ public class UserServiceImpl implements UserService{
     private PasswordEncoder passwordEncoder;
     private ModelMapper mapper;
     private UserRepository userRepository;
+    private JwtTool jwtTool;
 
     @Autowired
-    public UserServiceImpl(PasswordEncoder passwordEncoder, ModelMapper mapper, UserRepository userRepository) {
+    public UserServiceImpl(
+            PasswordEncoder passwordEncoder, ModelMapper mapper,
+            UserRepository userRepository, JwtTool jwtTool) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
+        this.jwtTool = jwtTool;
     }
 
     @Override
@@ -36,6 +41,12 @@ public class UserServiceImpl implements UserService{
         Mono<UserEntity> returnValue = this.userRepository.save(users);
 
         return returnValue.map(user -> this.mapper.map(user, UserDTO.class));
+    }
+
+    @Override
+    public Mono<Boolean> isTokenValid(String token) {
+        return Mono.just(token)
+                .map(tok -> this.jwtTool.validate(tok));
     }
 
     @Override

@@ -54,6 +54,12 @@ public class Controller {
                 .body(null);
     }
 
+    @GetMapping("/token/validate/{token}")
+    public Mono<Boolean> validateToken(@PathVariable String token){
+        return Mono.just(token)
+                .map(tok -> this.jwtTool.validate(tok));
+    }
+
     @PostMapping("/login")
     public Mono<ResponseEntity<String>> login(ServerWebExchange exchange){
         log.info("exchage run");
