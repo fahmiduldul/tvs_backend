@@ -3,15 +3,11 @@ package fahmi.authentication.service;
 import fahmi.authentication.data.UserEntity;
 import fahmi.authentication.data.UserRepository;
 import fahmi.authentication.shared.UserDTO;
-import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -42,19 +38,14 @@ public class UserServiceImpl implements UserService{
         return returnValue.map(user -> this.mapper.map(user, UserDTO.class));
     }
 
-    @SneakyThrows
     @Override
     public Mono<UserDetails> findByUsername(String email) {
-        Mono<UserEntity> userEntityMono = this.userRepository.findByEmail(email).log();
+        Mono<UserEntity> userEntityMono = this.userRepository.findByEmail(email);
 
-        userEntityMono.subscribe(user -> log.info("{}", user));
         return userEntityMono
-                //.switchIfEmpty(Mono.just("this is empty").map(a -> {log.info("{}", a); return null;}))
-                .map(userMono -> {
-                    return new User(userMono.getEmail(), userMono.getEncryptedPassword(),
-                            true, true, true, true,
-                            new ArrayList<>()
-                    );
-                });
+                .map(userMono -> new User(userMono.getEmail(), userMono.getEncryptedPassword(),
+                        true, true, true, true,
+                        new ArrayList<>()
+                ));
     }
 }
