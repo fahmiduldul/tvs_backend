@@ -62,11 +62,8 @@ public class Controller {
 
     @PostMapping("/login")
     public Mono<ResponseEntity<String>> login(ServerWebExchange exchange){
-        log.info("exchage run");
-
         return exchange.getFormData()
                 .map(x-> {
-                    log.info("{}", x);
                     String username = x.get("username").get(0);
                     return this.jwtTool.encode(username);
                 })
