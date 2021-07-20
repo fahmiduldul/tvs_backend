@@ -1,12 +1,9 @@
 package tvs.apigateway.filter;
 
-import com.netflix.discovery.converters.Auto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -20,7 +17,7 @@ import tvs.apigateway.utils.JwtTool;
 @Slf4j
 @Component
 public class AuthenticationFilter implements GlobalFilter {
-    private JwtTool jwtTool;
+    private final JwtTool jwtTool;
 
     @Autowired
     public AuthenticationFilter(JwtTool jwtTool) {
@@ -41,19 +38,19 @@ public class AuthenticationFilter implements GlobalFilter {
 
         // check if available
         if (!req.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-            return this.rejectRequest(res, HttpStatus.UNAUTHORIZED);
+            return this.rejectRequest(res);
         }
 
         // check if token valid
         if (!this.jwtTool.validate(req.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0))) {
-            return this.rejectRequest(res, HttpStatus.UNAUTHORIZED);
+            return this.rejectRequest(res);
         }
 
         return chain.filter(exchange);
     }
 
-    private Mono<Void> rejectRequest(ServerHttpResponse res, HttpStatus httpStatus){
-        res.setStatusCode(httpStatus);
+    private Mono<Void> rejectRequest(ServerHttpResponse res){
+        res.setStatusCode(HttpStatus.UNAUTHORIZED);
         return res.setComplete();
     }
 

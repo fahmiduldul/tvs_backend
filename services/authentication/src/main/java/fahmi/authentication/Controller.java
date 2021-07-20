@@ -51,7 +51,7 @@ public class Controller {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(null);
+                .body(userDTOMono);
     }
 
     @GetMapping("/token/validate/{token}")
