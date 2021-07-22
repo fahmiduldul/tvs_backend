@@ -12,18 +12,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import tvs.apigateway.configuration.Configuration;
-import tvs.apigateway.utils.JwtTool;
 
 @Slf4j
 @Component
 public class AuthenticationFilter implements GlobalFilter {
-    private final JwtTool jwtTool;
-
-    @Autowired
-    public AuthenticationFilter(JwtTool jwtTool) {
-        this.jwtTool = jwtTool;
-    }
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
@@ -38,19 +30,14 @@ public class AuthenticationFilter implements GlobalFilter {
 
         // check if available
         if (!req.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-            return this.rejectRequest(res);
-        }
-
-        // check if token valid
-        if (!this.jwtTool.validate(req.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0))) {
-            return this.rejectRequest(res);
+            if(req.getHeaders().get(HttpHeaders.AUTHORIZATION).get(0).startsWith("Bearer")) return this.rejectRequest(res);
         }
 
         return chain.filter(exchange);
     }
 
     private Mono<Void> rejectRequest(ServerHttpResponse res){
-        res.setStatusCode(HttpStatus.UNAUTHORIZED);
+        res.setStatusCode(HttpStatus.FORBIDDEN);
         return res.setComplete();
     }
 
