@@ -2,7 +2,7 @@ package fahmi.authentication.service;
 
 import fahmi.authentication.data.UserEntity;
 import fahmi.authentication.data.UserRepository;
-import fahmi.authentication.security.JwtTool;
+import fahmi.authentication.security.JwtUtil;
 import fahmi.authentication.shared.UserDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -21,16 +21,16 @@ public class UserServiceImpl implements UserService{
     private PasswordEncoder passwordEncoder;
     private ModelMapper mapper;
     private UserRepository userRepository;
-    private JwtTool jwtTool;
+    private JwtUtil jwtUtil;
 
     @Autowired
     public UserServiceImpl(
             PasswordEncoder passwordEncoder, ModelMapper mapper,
-            UserRepository userRepository, JwtTool jwtTool) {
+            UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
-        this.jwtTool = jwtTool;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService{
     @Override
     public Mono<Boolean> isTokenValid(String token) {
         return Mono.just(token)
-                .map(tok -> this.jwtTool.validate(tok));
+                .map(tok -> this.jwtUtil.validate(tok));
     }
 
     @Override
@@ -58,5 +58,9 @@ public class UserServiceImpl implements UserService{
                         true, true, true, true,
                         new ArrayList<>()
                 ));
+    }
+
+    public Mono<UserEntity> findUserEntityByEmail(String email){
+        return this.userRepository.findByEmail(email);
     }
 }

@@ -1,14 +1,15 @@
 package fahmi.authentication;
 
+import fahmi.authentication.data.UserEntity;
 import fahmi.authentication.request.CreateUserRequest;
-import fahmi.authentication.security.JwtTool;
+import fahmi.authentication.security.JwtUtil;
 import fahmi.authentication.service.UserServiceImpl;
 import fahmi.authentication.shared.UserDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -21,18 +22,22 @@ import javax.validation.Valid;
 public class Controller {
     private UserServiceImpl userService;
     private ModelMapper mapper;
-    private JwtTool jwtTool;
+    private JwtUtil jwtUtil;
+
+    private Environment env;
 
     @Autowired
-    public Controller(UserServiceImpl userService, ModelMapper mapper, JwtTool jwtTool) {
+    public Controller(UserServiceImpl userService, ModelMapper mapper,
+                      JwtUtil jwtUtil, Environment env) {
         this.mapper = mapper;
         this.userService = userService;
-        this.jwtTool = jwtTool;
+        this.jwtUtil = jwtUtil;
+        this.env = env;
     }
 
     @GetMapping("/status")
     public ResponseEntity<Mono<String>> healthCheck(){
-        return ResponseEntity.status(HttpStatus.OK).body(Mono.just("I'm On!"));
+        return ResponseEntity.status(HttpStatus.OK).body(Mono.just("I'm On! The secret: " + env.getProperty("jwt.secret")));
     }
 
     @PostMapping(
@@ -45,7 +50,7 @@ public class Controller {
         UserDTO userDTO = this.mapper.map(createUserRequest, UserDTO.class);
         Mono<UserDTO> userDTOMono = this.userService.createUser(userDTO);
 
-        String token = this.jwtTool.encode(userDTO.getEmail());
+        String token = this.jwtUtil.encode(userDTO.getEmail());
 
         HttpCookie cookie = ResponseCookie.from("jwt",token).build();
 
@@ -54,18 +59,13 @@ public class Controller {
                 .body(userDTOMono);
     }
 
-    @GetMapping("/token/validate/{token}")
-    public Mono<Boolean> validateToken(@PathVariable String token){
-        return Mono.just(token)
-                .map(tok -> this.jwtTool.validate(tok));
-    }
 
     @PostMapping("/login")
     public Mono<ResponseEntity<String>> login(ServerWebExchange exchange){
         return exchange.getFormData()
                 .map(x-> {
                     String username = x.get("username").get(0);
-                    return this.jwtTool.encode(username);
+                    return this.jwtUtil.encode(username);
                 })
                 .map(token -> {
                     HttpCookie cookie = ResponseCookie.from("jwt",token).build();
@@ -88,10 +88,15 @@ public class Controller {
         //        .subscribe();
     }
 
-    @GetMapping(path = "/user/{email}")
-    public ResponseEntity<Mono<UserDetails>> getUser(@PathVariable String email){
-        Mono<UserDetails> userDTOMono = this.userService.findByUsername(email);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(userDTOMono);
+    @GetMapping("/token/validate/{token}")
+    public Mono<Boolean> validateToken(@PathVariable String token){
+        return Mono.just(token)
+                .map(tok -> this.jwtUtil.validate(tok));
+    }
+
+    @GetMapping(path = "/user/entity/{email}")
+    public Mono<ResponseEntity<UserEntity>> getUser(@PathVariable String email){
+        return this.userService.findUserEntityByEmail(email)
+                .map(userEntity -> ResponseEntity.ok().body(userEntity));
     }
 }
